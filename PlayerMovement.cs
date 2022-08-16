@@ -8,8 +8,10 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     // ==== Basic Movement Floats ==== //
-    // Walking
+    // Walking - Running
     private float horizSpeed;
+    private float runningSpeed;
+    private float slowSpeed;
     // Jumping - Double Jumping - Wall Jumping
     public float jumpForce;
     private float firstJumpForce;
@@ -57,11 +59,14 @@ public class PlayerMovement : MonoBehaviour
     // ==== Input Storage ==== //
     private float horizInput;
     private float vertInput;
+    private float runningInput;
     private bool jumpInput;
 
     // ==== Movement Values ==== //
     private float horizMovement;
     private float vertMovement;
+    private float runningMovement;
+
 
     // Start is called before the first frame update
     void Start()
@@ -73,9 +78,10 @@ public class PlayerMovement : MonoBehaviour
         facingRight = true;
 
         horizSpeed = 2.0f;
+        runningSpeed = 3.5f;
+        slowSpeed = 1.0f;
         firstJumpForce = 3.5f;
         secondJumpForce = 3.0f;
-        slidingSpeed = 0.5f;
 
         haveDoubleJump = false;    
         wallJumping = false;
@@ -83,6 +89,7 @@ public class PlayerMovement : MonoBehaviour
         yWallForce = 2.5f;
         wallJumpTime = 0.20f;
 
+        slidingSpeed = 0.5f;
         timeNeededToClimb = 0.75f;
         wallClimbingSpeed = 1.5f;
         haveBeenSliding = 0.0f;
@@ -93,12 +100,17 @@ public class PlayerMovement : MonoBehaviour
     // Handles input for physics
     void Update()
     {
+        // Set gravity to 1.0
+        rb.gravityScale = 1.0f;
+
+
         // Time Storage
         timeNow = Time.time;
 
         // Movement Left/Right/Jumping
         horizInput = Input.GetAxisRaw("Horizontal");
         jumpInput = Input.GetButtonDown("Jump");
+        runningInput = Input.GetAxisRaw("Run");
 
         // Looking Up/Down
         vertInput = Input.GetAxisRaw("Vertical");
@@ -106,6 +118,7 @@ public class PlayerMovement : MonoBehaviour
         // Setting Values to Inputs
         horizMovement = horizInput;
         vertMovement = vertInput;
+        runningMovement = runningInput;
         
         // Setting other values based on environmental variables
         grounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, whatIsGround);
@@ -113,17 +126,17 @@ public class PlayerMovement : MonoBehaviour
 
         // ==== Wall Movement and Sliding checks ==== //
         // If moving into a wall, and not on the ground...
-        if (touchingFront && !grounded)
+        if (touchingFront && !grounded && Mathf.Abs(horizMovement) > 0)
         {
             sliding = true;
-            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -slidingSpeed, float.MaxValue));
+            //rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -slidingSpeed, float.MaxValue));
             // If you were already sliding...
             // *Begin storing the time spent sliding.
             if (wasSliding)
             {
                 haveBeenSliding += timeNow - timeAnchor;
                 timeAnchor = timeNow;
-                print(haveBeenSliding);
+                //print(haveBeenSliding);
 
                 //TODO: Animation
                 //animator.SetTrigger("sliding");
@@ -173,7 +186,6 @@ public class PlayerMovement : MonoBehaviour
         // If already wall jumping....
         else if (wallJumping)
         {
-            //rb.velocity = new Vector2(xWallForce * -horizMovement, yWallForce);
             rb.velocity = new Vector2(xSnapshot, yWallForce);
         }
         // Begin a wall jump
@@ -215,13 +227,43 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         // Horizontal Movement
-        // If sliding, have been sliding long enough to climb, and not moving down...
-        if (sliding && (haveBeenSliding > timeNeededToClimb) && (vertMovement >= 0))
+        // If sliding, have NOT been sliding long enough to climb, and moving horizontally...
+        if (sliding && (haveBeenSliding < timeNeededToClimb) && Mathf.Abs(horizMovement) > 0)
         {
-            rb.velocity = new Vector2(rb.velocity.x, wallClimbingSpeed);
-
+            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -slidingSpeed, float.MaxValue));
+        }
+        // If sliding, HAVE been sliding long enough to climb, and moving horizontally...
+        else if (sliding && (haveBeenSliding >= timeNeededToClimb) && Mathf.Abs(horizMovement) > 0)
+        {
+            if (vertMovement > 0)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, wallClimbingSpeed);
+            }
+            else if (vertMovement < 0)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, -slidingSpeed);
+            }
+            else
+            {
+                rb.velocity = new Vector2(rb.velocity.x, 0.0f);
+                rb.gravityScale = 0.0f;
+                print("Not Moving!");
+            }
             // TODO: Animation
             //animator.SetTrigger("climbing");
+        }
+        // If running or slowwalking...
+        else if (runningMovement != 0 && grounded)
+        {
+            if (runningMovement > 0)
+            {
+                rb.velocity = new Vector2(horizMovement * runningSpeed, rb.velocity.y);
+
+            }
+            else if (runningMovement < 0)
+            {
+                rb.velocity = new Vector2(horizMovement * slowSpeed, rb.velocity.y);
+            }
         }
         // If not wall jumping...
         else if (!wallJumping)
