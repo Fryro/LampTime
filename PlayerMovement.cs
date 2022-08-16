@@ -7,52 +7,96 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    // CONSTANTS
-    private float horizSpeed = 2.0f;
-    private float firstJumpForce = 3.5f;
-    private float secondJumpForce = 3.0f;
+    // ==== Basic Movement Floats ==== //
+    // Walking
+    private float horizSpeed;
+    // Jumping - Double Jumping - Wall Jumping
+    public float jumpForce;
+    private float firstJumpForce;
+    private float secondJumpForce;
+    private float xWallForce;
+    private float yWallForce;
+    private float wallJumpTime;
+    // Wall Sliding - Wall Climbing
+    private float slidingSpeed;
+    private float haveBeenSliding;
+    private float wallClimbingSpeed;
+    private float timeNeededToClimb;
 
-    // References to related objects
-    private Rigidbody2D rb2d;
+    // ==== Basic Movement Booleans ==== //
+    // Walking
+    private bool facingRight = true;
+    // Jumping - Double Jumping - Wall Jumping
+    private bool grounded;
+    private bool touchingFront;
+    public bool haveDoubleJump;  
+
+    // Wall Sliding - Wall Climbing
+    private bool sliding;
+    private bool wasSliding;
+    private bool wallJumping;
+
+    // ==== References to related objects ==== //
+    private Rigidbody2D rb;
     private Animator animator;
 
-    // Variables used to determine movement/animation changes
-    private bool facingRight = true;
-    public bool grounded;
+    // ==== Unity Specific Jump Conditions ==== //
     [Header("Jump Conditions")]
+    [SerializeField] private Transform frontCheck;
     [SerializeField] private Transform groundCheck;
-    [SerializeField] private float radOfCircle;
+    [SerializeField] private float checkRadius;
     [SerializeField] private LayerMask whatIsGround;
     
-    public bool haveDoubleJump;    
+    // ==== Speed Storage ==== //
+    public float xSnapshot;
 
-    // Variables used to store Input
+    // ==== Time Storage ==== //
+    public float timeAnchor;
+    public float timeNow;
+
+    // ==== Input Storage ==== //
     private float horizInput;
     private float vertInput;
     private bool jumpInput;
 
-    // Values that are set based on Input Variables
+    // ==== Movement Values ==== //
     private float horizMovement;
     private float vertMovement;
-
-    // Jumping Values
-    public float jumpForce;
-    public float jumpTime;
-    private float jumpTimeCounter;
-    private bool stoppedJumping;
 
     // Start is called before the first frame update
     void Start()
     {
-        rb2d = GetComponent<Rigidbody2D>();
+        rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+
+        // Setting Variables to Defaults
+        facingRight = true;
+
+        horizSpeed = 2.0f;
+        firstJumpForce = 3.5f;
+        secondJumpForce = 3.0f;
+        slidingSpeed = 0.5f;
+
+        haveDoubleJump = false;    
+        wallJumping = false;
+        xWallForce = 2.0f;
+        yWallForce = 2.5f;
+        wallJumpTime = 0.20f;
+
+        timeNeededToClimb = 0.75f;
+        wallClimbingSpeed = 1.5f;
+        haveBeenSliding = 0.0f;
+        wasSliding = false;
     }
 
     // Update is called once per frame
     // Handles input for physics
     void Update()
     {
-        // Movement U/L/R
+        // Time Storage
+        timeNow = Time.time;
+
+        // Movement Left/Right/Jumping
         horizInput = Input.GetAxisRaw("Horizontal");
         jumpInput = Input.GetButtonDown("Jump");
 
@@ -64,13 +108,50 @@ public class PlayerMovement : MonoBehaviour
         vertMovement = vertInput;
         
         // Setting other values based on environmental variables
-        grounded = Physics2D.OverlapCircle(groundCheck.position, radOfCircle, whatIsGround);
+        grounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, whatIsGround);
+        touchingFront = Physics2D.OverlapCircle(frontCheck.position, checkRadius, whatIsGround);
 
+        // ==== Wall Movement and Sliding checks ==== //
+        // If moving into a wall, and not on the ground...
+        if (touchingFront && !grounded)
+        {
+            sliding = true;
+            rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -slidingSpeed, float.MaxValue));
+            // If you were already sliding...
+            // *Begin storing the time spent sliding.
+            if (wasSliding)
+            {
+                haveBeenSliding += timeNow - timeAnchor;
+                timeAnchor = timeNow;
+                print(haveBeenSliding);
 
+                //TODO: Animation
+                //animator.SetTrigger("sliding");
+            }
+            // In all other cases...
+            else
+            {
+                wasSliding = true;
+                timeAnchor = timeNow;
+                haveBeenSliding = 0.0f;
 
-        // Setting haveDoubleJump if grounded
+                //TODO: Animation
+                //animator.SetTrigger("startsliding");
+            }
+        }
+        // In all other cases...
+        else
+        {
+            sliding = false;
+            wasSliding = false;
+            timeAnchor = 0.0f;
+            haveBeenSliding = 0.0f;
+        }
+
+        // Setting haveDoubleJump if grounded or sliding
         // *For cases where a player falls off a platform, but does not jump.
-        if (grounded)
+        // *Or when touching a wall.
+        if (grounded || sliding)
         {
             haveDoubleJump = true;
         }
@@ -78,32 +159,53 @@ public class PlayerMovement : MonoBehaviour
         // Vertical Movement
         // If Jump + grounded, do first jump.
         // Else if Jump + have double jump, do second jump.
+
+        // Grounded jump
         if (jumpInput && grounded) 
         {
             jumpForce = firstJumpForce;
-            rb2d.velocity = new Vector2(rb2d.velocity.x, jumpForce);
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             jumpForce = 0;
 
             // Animation
             animator.SetTrigger("jump");
         }
-        else if (jumpInput && !grounded && haveDoubleJump)
+        // If already wall jumping....
+        else if (wallJumping)
+        {
+            //rb.velocity = new Vector2(xWallForce * -horizMovement, yWallForce);
+            rb.velocity = new Vector2(xSnapshot, yWallForce);
+        }
+        // Begin a wall jump
+        else if (jumpInput && !grounded && sliding)
+        {
+            wallJumping = true;
+            xSnapshot = xWallForce * -horizMovement;
+            Invoke("SetWallJumpingFalse", wallJumpTime);
+
+            // TODO: Animation
+            // animator.setTrigger("walljump");
+        }
+        // Double jump
+        else if (jumpInput && !grounded && haveDoubleJump && !sliding)
         {
             jumpForce = secondJumpForce;
-            rb2d.velocity = new Vector2(rb2d.velocity.x, jumpForce);
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             jumpForce = 0;
             haveDoubleJump = false;
             
-            // Animation
-            animator.SetTrigger("jump");
+            // TODO: Animation
+            //animator.SetTrigger("doublejump");
         }
 
+        // Sliding Animation Handling
+
         // Falling Animation Handling
-        if (rb2d.velocity.y < 0)
+        if (rb.velocity.y < 0)
         {
             animator.SetBool("falling", true);
         }
-        else if (rb2d.velocity.y == 0)
+        else if (rb.velocity.y >= 0)
         {
             animator.SetBool("falling", false);
         }
@@ -113,8 +215,19 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         // Horizontal Movement
-        rb2d.velocity = new Vector2(horizMovement * horizSpeed, rb2d.velocity.y);
+        // If sliding, have been sliding long enough to climb, and not moving down...
+        if (sliding && (haveBeenSliding > timeNeededToClimb) && (vertMovement >= 0))
+        {
+            rb.velocity = new Vector2(rb.velocity.x, wallClimbingSpeed);
 
+            // TODO: Animation
+            //animator.SetTrigger("climbing");
+        }
+        // If not wall jumping...
+        else if (!wallJumping)
+        {
+            rb.velocity = new Vector2(horizMovement * horizSpeed, rb.velocity.y);
+        }
 
         // Animation
         HandleLayers();
@@ -133,6 +246,12 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void SetWallJumpingFalse()
+    {
+        this.wallJumping = false;
+        xSnapshot = 0.0f;
+    }
+
 
     private void HandleLayers()
     {
@@ -148,6 +267,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.DrawSphere(groundCheck.position, radOfCircle);
+        Gizmos.DrawSphere(groundCheck.position, checkRadius);
+        Gizmos.DrawSphere(frontCheck.position, checkRadius);
     }
 }
