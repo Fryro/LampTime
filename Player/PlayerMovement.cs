@@ -24,6 +24,12 @@ public class PlayerMovement : MonoBehaviour
     private float haveBeenSliding;
     private float wallClimbingSpeed;
     private float timeNeededToClimb;
+    // Hitstun
+    //private float hitstunSpent;
+    private float hitstunMax;
+    private float hitLaunchX;
+    private float hitLaunchY;
+    private float xLaunch;
 
     // ==== Basic Movement Booleans ==== //
     // Walking
@@ -32,11 +38,13 @@ public class PlayerMovement : MonoBehaviour
     private bool grounded;
     private bool touchingFront;
     public bool haveDoubleJump;  
-
     // Wall Sliding - Wall Climbing
     private bool sliding;
     private bool wasSliding;
     private bool wallJumping;
+    // Hitstun
+    private bool hitstun;
+    private bool recovering;
 
     // ==== References to related objects ==== //
     private Rigidbody2D rb;
@@ -49,8 +57,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float checkRadius;
     [SerializeField] private LayerMask whatIsGround;
     
-    // ==== Speed Storage ==== //
+    // ==== Speed and Direction Storage ==== //
     public float xSnapshot;
+    public bool facingSnapshot;
 
     // ==== Time Storage ==== //
     public float timeAnchor;
@@ -76,6 +85,13 @@ public class PlayerMovement : MonoBehaviour
 
         // Setting Variables to Defaults
         facingRight = true;
+        hitstun = false;
+        recovering = true;
+
+        hitstunMax = 0.33f;
+        hitLaunchX = 3.0f;
+        hitLaunchY = 0.5f;
+        xLaunch = 0.0f;
 
         horizSpeed = 2.0f;
         runningSpeed = 3.5f;
@@ -167,14 +183,42 @@ public class PlayerMovement : MonoBehaviour
         if (grounded || sliding)
         {
             haveDoubleJump = true;
+            recovering = false;
         }
 
         // Vertical Movement
         // If Jump + grounded, do first jump.
         // Else if Jump + have double jump, do second jump.
 
+        // Hitstun Lockout
+        if (recovering)
+        {
+            rb.velocity = new Vector2(0.0f, rb.velocity.y);
+        }
+        else if (hitstun)
+        {
+            // Use snapshotted direction to determine X velocity.
+            if (facingSnapshot)
+            {
+                xLaunch = hitLaunchX * -1;
+            }
+            else
+            { 
+                xLaunch = hitLaunchX * 1;
+            }
+
+            if (xSnapshot != 0)
+            {
+                rb.velocity = new Vector2(hitLaunchX * -xSnapshot, hitLaunchY);
+            }
+            else
+            {
+                rb.velocity = new Vector2(xLaunch, hitLaunchY);
+            }
+            Invoke("SetHitstunFalse", hitstunMax);
+        }
         // Grounded jump
-        if (jumpInput && grounded) 
+        else if (jumpInput && grounded) 
         {
             jumpForce = firstJumpForce;
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
@@ -228,7 +272,11 @@ public class PlayerMovement : MonoBehaviour
     {
         // Horizontal Movement
         // If sliding, have NOT been sliding long enough to climb, and moving horizontally...
-        if (sliding && (haveBeenSliding < timeNeededToClimb) && Mathf.Abs(horizMovement) > 0)
+        if (hitstun || recovering)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y);
+        }
+        else if (sliding && (haveBeenSliding < timeNeededToClimb) && Mathf.Abs(horizMovement) > 0)
         {
             rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -slidingSpeed, float.MaxValue));
         }
@@ -294,6 +342,22 @@ public class PlayerMovement : MonoBehaviour
         xSnapshot = 0.0f;
     }
 
+    public void GetHit()
+    {
+        hitstun = true;
+        recovering = false;
+        xSnapshot = horizMovement;
+        facingSnapshot = facingRight;
+    }
+
+    private void SetHitstunFalse()
+    {
+        this.recovering = true;
+        this.hitstun = false;
+        this.facingSnapshot = true;
+        this.xLaunch = 0.0f;
+        xSnapshot = 0.0f;
+    }
 
     private void HandleLayers()
     {
