@@ -33,7 +33,14 @@ public class PlayerHurtbox : MonoBehaviour
                 timeAnchor = timeNow;
             }
             else
-            print("Allowed: " + iFrames + " Elapsed: " + Mathf.Abs(timeNow - timeAnchor));
+            {
+                //print("Allowed: " + iFrames + " Elapsed: " + Mathf.Abs(timeNow - timeAnchor));
+                return;
+            }
+        }
+        else if (other.gameObject.tag == "Item")
+        {
+            PickUp(other);
         }
     }
 
@@ -48,7 +55,10 @@ public class PlayerHurtbox : MonoBehaviour
                 timeAnchor = timeNow;
             }
             else
-            print("Allowed: " + iFrames + " Elapsed: " + Mathf.Abs(timeNow - timeAnchor));
+            {
+                //print("Allowed: " + iFrames + " Elapsed: " + Mathf.Abs(timeNow - timeAnchor));
+                return;
+            }
         }
     }
 
@@ -64,7 +74,13 @@ public class PlayerHurtbox : MonoBehaviour
     {
         EnemyBehaviour enemy = other.GetComponent<EnemyBehaviour>();
         player.TakeDamage(enemy.damage);
-        print("youch! current hp: " + player.health);
+        print("youch!\t(You took " + enemy.damage + " damage).");
         playerMove.GetHit();
+    }
+
+    void PickUp(Collider2D other)
+    {
+        ItemObject item = other.GetComponent<ItemObject>();
+        item.OnHandlePickupItem();
     }
 }

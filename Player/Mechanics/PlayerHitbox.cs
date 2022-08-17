@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class PlayerHitbox : MonoBehaviour
 {
-    [SerializeField] private PlayerInventory inventory;
     [SerializeField] private Collider2D hitbox;
     [SerializeField] private PlayerResources player;
     [SerializeField] private UnityEngine.Rendering.Universal.Light2D lantern;
@@ -93,10 +92,10 @@ public class PlayerHitbox : MonoBehaviour
 
     private IEnumerator Attack(float frontload, float damage, float healing, int typeOfAttack)
     {
-        print("Charging...");
+        print("Telegraphing attack...");
         StartCoroutine(Telegraph(frontload, typeOfAttack));
         yield return new WaitForSeconds(frontload);
-        print("GO!");
+        print("Swing!");
         results = new Collider2D[numCollisions];
         int collisions = hitbox.OverlapCollider(filter, results);
         for (int i = 0; i < collisions; i++)
@@ -116,7 +115,7 @@ public class PlayerHitbox : MonoBehaviour
         if (typeOfAttack == 1)
         {
             float fll = frontload / 8.0f;
-            print("im here");
+            //print("im here");
             for (float i = 0.0f; i < frontload; i += fll)
             {
                 lantern.intensity = intensityFunction(i + 1.5f);

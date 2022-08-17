@@ -110,6 +110,7 @@ public class PlayerMovement : MonoBehaviour
         wallClimbingSpeed = 1.5f;
         haveBeenSliding = 0.0f;
         wasSliding = false;
+
     }
 
     // Update is called once per frame
@@ -295,7 +296,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 rb.velocity = new Vector2(rb.velocity.x, 0.0f);
                 rb.gravityScale = 0.0f;
-                print("Not Moving!");
+                print("Hanging on wall!");
             }
             // TODO: Animation
             //animator.SetTrigger("climbing");

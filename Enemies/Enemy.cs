@@ -12,7 +12,9 @@ public abstract class Enemy : MonoBehaviour
     
     protected Rigidbody2D rb;
     protected Animator animator;
+    protected SpriteRenderer graphics;
 
+    public float maxHealth;
     public float health;
     public float guardMultiplier;
     public bool guarding; 
@@ -29,6 +31,7 @@ public abstract class Enemy : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        graphics = GetComponent<SpriteRenderer>();
         iFrames = 0.1f;
         timeAnchor = Time.time;
         timeNow = Time.time;
@@ -60,7 +63,7 @@ public abstract class Enemy : MonoBehaviour
                 incoming *= guardMultiplier;
             }
             health -= incoming;
-            print(health);
+            print("Enemy HP Remaining: " + health + "\t(You did: " + incoming + " damage).");
             timeAnchor = timeNow;  
         }
     }
