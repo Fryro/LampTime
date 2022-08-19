@@ -35,8 +35,8 @@ public class EnemyBehaviour : Enemy
     public override void Start()
     {
         // Add drops and dropChances to respective tables
-        // Must be added in descending order (70, 30, 0)
-        dropChances = new int[dropTableUniqueEntries] {moneyDropChance, noDropChance, daggerDropChance}; // 2 = total entries in following list.
+        // Must be added in descending order (70, 20, 10)
+        dropChances = new int[dropTableUniqueEntries] {moneyDropChance, noDropChance, daggerDropChance}; // 3 = total entries in following list.
         // Must be added in same order as above
         dropList = new List<GameObject>();
         dropList.Add(money);

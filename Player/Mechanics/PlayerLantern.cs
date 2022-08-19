@@ -26,7 +26,7 @@ public class PlayerLantern : MonoBehaviour
     private float oldHealthPercent;
     private float healthPercent;
 
-    //private float iFrames;
+    private float iFrames;
     private float updateTime = 0.1f; // Only use numbers that go evenly to 1; I.E; 0.5, 0.1, 0.05.
     private float timeStep;
     private float iterations;
@@ -43,7 +43,7 @@ public class PlayerLantern : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //iFrames = 0.75f;
+        iFrames = 0.75f;
         timeNow = Time.time;
         timeAnchor = Time.time;
 
@@ -76,12 +76,26 @@ public class PlayerLantern : MonoBehaviour
         }
         else if (dying)
         {
+            // FadeLight(lantern, lanternBrightness*oldHealthPercent, lanternBrightness*0.0f, 10.0f, 0.0f);
+            // FadeLight(ambientLight, ambientBrightness*oldHealthPercent, ambientBrightness*0.0f, 10.0f, 0.00f);
+            // foreach (Transform item in lightParent.transform)
+            // {
+            //     childLight = item.GetComponent<UnityEngine.Rendering.Universal.Light2D>();
+            //     FadeLight(childLight, torchBrightness*oldHealthPercent, torchBrightness*0.0f, 10.0f, 0.0f);
+            // }
             StartCoroutine(DeathFade(lantern.intensity, childLight.intensity, ambientLight.intensity));
             StartCoroutine(player.EndGame());
             return;
         }
         else
         {
+            // FadeLight(lantern, lanternBrightness*oldHealthPercent, lanternBrightness*healthPercent, iFrames, 0.5f);
+            // FadeLight(ambientLight, ambientBrightness*oldHealthPercent, ambientBrightness*healthPercent, iFrames, 0.05f);
+            // foreach (Transform item in lightParent.transform)
+            // {
+            //     childLight = item.GetComponent<UnityEngine.Rendering.Universal.Light2D>();
+            //     FadeLight(childLight, torchBrightness*oldHealthPercent, torchBrightness*healthPercent, iFrames, 0.5f);
+            // }
             lantern.intensity = lanternBrightness * healthPercent + 0.5f;
             ambientLight.intensity = ambientBrightness * healthPercent;
             foreach (Transform item in lightParent.transform)
@@ -92,7 +106,7 @@ public class PlayerLantern : MonoBehaviour
         }
 
         healthAnchor = healthNow;
-        print("Lantern: " + lantern.intensity + "\tTorches: " + childLight.intensity + "\tAmbient: " + ambientLight.intensity);
+        //print("Lantern: " + lantern.intensity + "\tTorches: " + childLight.intensity + "\tAmbient: " + ambientLight.intensity);
 
         if (healthNow <= 0)
         {
@@ -176,4 +190,16 @@ public class PlayerLantern : MonoBehaviour
             Time.timeScale = 0.0f;
         }
     }
+
+    // public void FadeLight(UnityEngine.Rendering.Universal.Light2D light, float oldBrightness, float newBrightness, float timeFrame, float floorBrightness)
+    // {
+    //     float timePassed = 0.0f;
+
+    //     while (timePassed < timeFrame)
+    //     {
+    //         timePassed += Time.deltaTime;
+
+    //         light.intensity = Mathf.Lerp(oldBrightness, newBrightness, timePassed/timeFrame) + floorBrightness;
+    //     }
+    // }
 }

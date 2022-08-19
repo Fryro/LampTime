@@ -77,6 +77,9 @@ public class PlayerMovement : MonoBehaviour
     private float runningMovement;
 
 
+    // ==== Lockout Values ==== //
+    [SerializeField] PlayerLantern playerLantern;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -217,6 +220,11 @@ public class PlayerMovement : MonoBehaviour
                 rb.velocity = new Vector2(xLaunch, hitLaunchY);
             }
             Invoke("SetHitstunFalse", hitstunMax);
+        }
+        // Death Lockout
+        else if (playerLantern.dying)
+        {
+            return;
         }
         // Grounded jump
         else if (jumpInput && grounded) 
