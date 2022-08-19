@@ -9,10 +9,21 @@ public class PauseMenu : MonoBehaviour
     public static bool paused = false;
     [SerializeField] public GameObject pauseMenu;
     [SerializeField] public GameObject inventoryMenu;
+    private GameObject player;
+    private SpriteRenderer playerSprite;
+    private InventoryMenu inventoryMenuController;
+    private PlayerHitbox playerHitbox;
+    private PlayerLantern playerLantern;
+    private float attackCDSnapshot;
 
     // Start
     void Start()
     {
+        inventoryMenuController = GetComponent<InventoryMenu>();
+        playerHitbox = GameObject.Find("PlayerHitbox").GetComponent<PlayerHitbox>();
+        player = GameObject.Find("Player");
+        playerSprite = player.GetComponent<SpriteRenderer>();
+        playerLantern = player.GetComponentInChildren<PlayerLantern>();
         Resume();
     }
 
@@ -21,34 +32,69 @@ public class PauseMenu : MonoBehaviour
     {
         if (Input.GetButtonDown("Pause"))
         {
-            if (paused)
+            if (inventoryMenuController.inventoryOpen)
             {
-                Resume();
+                if (inventoryMenuController.AreMenusOpen())
+                {
+                    inventoryMenuController.CloseAllMenus();
+                }
+                else
+                {
+                    CloseInventory();
+                }
             }
-            else
+            else 
             {
-                Pause();
+                if (paused)
+                {
+                    Resume();
+                }
+                else
+                {
+                    Pause();
+                }
             }
         }
     }
 
     public void Resume()
     {
-        pauseMenu.SetActive(false);
-        Time.timeScale = 1.0f;
-        paused = false;
+        if (!playerLantern.dying)
+        {
+            pauseMenu.SetActive(false);
+            Time.timeScale = 1.0f;
+            paused = false;
+            playerHitbox.overallCD = attackCDSnapshot;
+            attackCDSnapshot = 0.0f;
+            playerSprite.sortingOrder = 100;
+        }
     }
 
-    void Pause()
+    public void Pause()
     {
-        pauseMenu.SetActive(true);
-        Time.timeScale = 0.0f;
-        paused = true;
+        if (!playerLantern.dying)
+        {
+            pauseMenu.SetActive(true);
+            Time.timeScale = 0.0f;
+            paused = true;
+            attackCDSnapshot = playerHitbox.overallCD;
+            playerHitbox.overallCD = 1000000.0f;
+            playerSprite.sortingOrder = 89; // Just under the pause menu, but above everything else.
+        }
     }
 
     public void OpenInventory()
     {
+        pauseMenu.SetActive(false);
         inventoryMenu.SetActive(true);
+        inventoryMenuController.SetInventoryOpenTrue();
+    }
+
+    public void CloseInventory()
+    {
+        inventoryMenuController.SetInventoryOpenFalse();
+        inventoryMenu.SetActive(false);
+        pauseMenu.SetActive(true);
     }
 
     public void LoadMenu()

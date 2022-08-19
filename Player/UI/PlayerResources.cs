@@ -23,15 +23,12 @@ public class PlayerResources : MonoBehaviour
         health = 100.0f;
         guardMultiplier = 0.2f;
         guarding = false;
+        healthText.text = ("Health: " + health);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (health <= 0)
-        {
-            SceneManager.LoadScene("Tutorial");
-        }
 
         if (Input.GetKeyDown(KeyCode.E))
         {
@@ -51,6 +48,10 @@ public class PlayerResources : MonoBehaviour
             incoming *= guardMultiplier;
         }
         health -= incoming;
+        if (health < 0.0f)
+        {
+            health = 0.0f;
+        }
         healthBar.fillAmount = health / 100.0f;
         healthText.text = ("Health: " + health);
         //healthText.SetText("Health: " + health);
@@ -63,5 +64,11 @@ public class PlayerResources : MonoBehaviour
         healthBar.fillAmount = health / 100.0f;
         healthText.text = ("Health: " + health);
         //healthText.SetText("Health: " + health);
+    }
+
+    public IEnumerator EndGame()
+    {
+        yield return new WaitForSecondsRealtime(3.0f);
+        SceneManager.LoadScene("Tutorial");
     }
 }

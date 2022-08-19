@@ -15,6 +15,8 @@ public class PlayerHitbox : MonoBehaviour
     private bool primaryInput;
     private bool secondaryInput;
 
+    public bool attacking;
+
     //private primaryAttackShape;
     private float primaryFrontload;
     private float primaryAttackDamage;
@@ -26,11 +28,14 @@ public class PlayerHitbox : MonoBehaviour
     private float secondaryHeal;
     private float secondaryCD;
 
-    private float overallCD;
+    // Public so PauseMenu can access, as well as other mechanics that can reset attack cd.
+    public float overallCD;
 
     private float timeAnchor;
     private float timeNow;
 
+    private float maxBrightness;
+    private float oldBrightness;
 
     // Types of Attacks
     // 1 : sword
@@ -50,6 +55,8 @@ public class PlayerHitbox : MonoBehaviour
         numCollisions = 10;
         results = new Collider2D[numCollisions];
 
+        attacking = false;
+
         primaryFrontload = 0.5f;
         primaryInput = false;
         primaryAttackDamage = 3.0f;
@@ -63,12 +70,16 @@ public class PlayerHitbox : MonoBehaviour
         secondaryCD = 3.0f;
 
         overallCD = 0.0f;
+
+        maxBrightness = lantern.intensity;
+        oldBrightness = maxBrightness;
     }
 
     // Update is called once per frame
     void Update()
     {
         timeNow = Time.time;
+        oldBrightness = lantern.intensity;
 
         primaryInput = Input.GetButtonDown("Fire1");
         secondaryInput = Input.GetButtonDown("Fire2");
@@ -92,8 +103,9 @@ public class PlayerHitbox : MonoBehaviour
 
     private IEnumerator Attack(float frontload, float damage, float healing, int typeOfAttack)
     {
+        attacking = true;
         print("Telegraphing attack...");
-        StartCoroutine(Telegraph(frontload, typeOfAttack));
+        StartCoroutine(Telegraph(frontload, typeOfAttack, oldBrightness));
         yield return new WaitForSeconds(frontload);
         print("Swing!");
         results = new Collider2D[numCollisions];
@@ -108,9 +120,10 @@ public class PlayerHitbox : MonoBehaviour
                 player.Heal(healing);
             }
         }
-        lantern.intensity = 1.5f;
+        attacking = false;
     }
-    private IEnumerator Telegraph(float frontload, int typeOfAttack)
+
+    private IEnumerator Telegraph(float frontload, int typeOfAttack, float resetBrightness)
     {
         if (typeOfAttack == 1)
         {
@@ -118,10 +131,10 @@ public class PlayerHitbox : MonoBehaviour
             //print("im here");
             for (float i = 0.0f; i < frontload; i += fll)
             {
-                lantern.intensity = intensityFunction(i + 1.5f);
+                lantern.intensity = intensityFunction(i + (resetBrightness));
                 yield return new WaitForSeconds(fll);
             }
-            lantern.intensity = 1.5f;
+            lantern.intensity = resetBrightness;
         }
     }
 

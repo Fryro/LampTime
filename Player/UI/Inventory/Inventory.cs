@@ -22,15 +22,23 @@ public class Inventory : MonoBehaviour
 
     public void Add(InventoryItemData referenceData)
     {
+        int amountToAdd = 1;
+        if (referenceData.id.Equals("money"))
+        {
+            amountToAdd = 5;
+        }
         if (m_itemDictionary.TryGetValue(referenceData, out InventoryItem value))
         {
-            value.AddToStack();
+            value.AddToStack(amountToAdd);
+            print("Picked up a(n) " + referenceData + "! You now have " + value.stackSize);
         }
         else
         {
             InventoryItem newItem = new InventoryItem(referenceData);
             inventory.Add(newItem);
             m_itemDictionary.Add(referenceData, newItem);
+            newItem.AddToStack(amountToAdd - 1);
+            print("Picked up your first " + referenceData + "!");
         }
     }
 
@@ -45,6 +53,18 @@ public class Inventory : MonoBehaviour
                 inventory.Remove(value);
                 m_itemDictionary.Remove(referenceData);
             }
+        }
+    }
+
+    public int GetStackSize(InventoryItemData referenceData)
+    {
+        if (m_itemDictionary.TryGetValue(referenceData, out InventoryItem value))
+        {
+            return value.stackSize;
+        }
+        else
+        {
+            return 0;
         }
     }
 

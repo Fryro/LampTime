@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16a9c67287c0ce147b5c63b818d8ff14, type: 3}
-  m_Name: dagger
+  m_Name: noDrop
   m_EditorClassIdentifier: 
-  id: player_dagger
-  displayName: Dagger
-  icon: {fileID: 21300000, guid: 884116acb7c17cf46bf53cca549a33c7, type: 3}
-  prefab: {fileID: 1425781571978593680, guid: 2af133462486a7d488ad190fb38b24f1, type: 3}
+  id: noDrop
+  displayName: noDrop
+  icon: {fileID: 0}
+  prefab: {fileID: 1637762470251277337, guid: 5de0c507a7e75cc42879fd96b3ae8d5e, type: 3}

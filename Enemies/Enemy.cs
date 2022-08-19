@@ -46,12 +46,12 @@ public abstract class Enemy : MonoBehaviour
 
     protected void Move()
     {
-        rb.velocity = new Vector2(direction * speed, rb.velocity.y);
+       rb.velocity = new Vector2(direction * speed, rb.velocity.y);
     }
 
     protected virtual void HandleMovement()
     {
-        Move();
+       Move();
     }
 
     public void TakeDamage(float incoming)
