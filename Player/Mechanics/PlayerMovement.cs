@@ -37,6 +37,7 @@ public class PlayerMovement : MonoBehaviour
     // Jumping - Double Jumping - Wall Jumping
     private bool grounded;
     private bool touchingFront;
+    private bool touchingBack;
     public bool haveDoubleJump;  
     // Wall Sliding - Wall Climbing
     private bool sliding;
@@ -53,6 +54,7 @@ public class PlayerMovement : MonoBehaviour
     // ==== Unity Specific Jump Conditions ==== //
     [Header("Jump Conditions")]
     [SerializeField] private Transform frontCheck;
+    [SerializeField] private Transform backCheck;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float checkRadius;
     [SerializeField] private LayerMask whatIsGround;
@@ -143,6 +145,7 @@ public class PlayerMovement : MonoBehaviour
         // Setting other values based on environmental variables
         grounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, whatIsGround);
         touchingFront = Physics2D.OverlapCircle(frontCheck.position, checkRadius, whatIsGround);
+        touchingBack = Physics2D.OverlapCircle(backCheck.position, checkRadius, whatIsGround);
 
         // ==== Wall Movement and Sliding checks ==== //
         // If moving into a wall, and not on the ground...
@@ -245,7 +248,14 @@ public class PlayerMovement : MonoBehaviour
         else if (jumpInput && !grounded && sliding)
         {
             wallJumping = true;
-            xSnapshot = xWallForce * -horizMovement;
+            if (touchingFront)
+            {
+                xSnapshot = xWallForce * -horizMovement;
+            }
+            else if (touchingBack)
+            {
+                xSnapshot = xWallForce * horizMovement;
+            }
             Invoke("SetWallJumpingFalse", wallJumpTime);
 
             // TODO: Animation
